@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Virtual Try-On Generator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background-color: #fff;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+        .upload-section {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background-color: #f0f8ff;
+        }
+        .upload-area p {
+            margin: 0;
+            color: #7f8c8d;
+        }
+        .upload-area i {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .preview-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .preview-image {
+            width: 180px;
+            height: 94px; /* Maintain 1200:627 aspect ratio */
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .samples-section {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .sample-images {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .sample-image-container {
+            width: 100%;
+            max-width: 380px;
+        }
+        .sample-image {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1200/627; /* Maintain your 1200×627 ratio */
+            object-fit: cover;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .sample-caption {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #333;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Virtual Try-On Generator</h1>
+            <p class="subtitle">See how products look on real people with AI-powered visualization</p>
+        </header>
+
+        <section class="upload-section">
+            <h2>Upload Product Images</h2>
+            <p>Upload up to 3 product images (eyewear, accessories, or fashion items) to generate virtual try-on samples.</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Click to browse or drag and drop product images</p>
+                <p><small>Maximum 3 images (JPEG, PNG, max 5MB each)</small></p>
+                <input type="file" id="fileInput" accept="image/*" multiple>
+            </div>
+            
+            <div class="preview-images" id="previewImages"></div>
+            
+            <button class="btn" id="submitBtn" disabled>Generate Virtual Try-On</button>
+        </section>
+
+        <section class="samples-section">
+            <h2>Sample Virtual Try-On Results</h2>
+            <p>See examples of how our AI transforms product images into realistic try-on visuals.</p>
+            
+            <div class="sample-images">
+                <div class="sample-image-container">
+                    <img src="https://imgur.com/TO6k9CO" alt="Sample 1" class="sample-image">
+                    <p class="sample-caption">Eyewear virtual try-on example</p>
+                </div>
+                <div class="sample-image-container">
+                    <img src="https://imgur.com/nK2TI11" alt="Sample 2" class="sample-image">
+                    <p class="sample-caption">Hat virtual try-on example</p>
+                </div>
+                <div class="sample-image-container">
+                    <img src="https://imgur.com/RO9KRCR" alt="Sample 3" class="sample-image">
+                    <p class="sample-caption">Jewelry virtual try-on example</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modal Popup -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Demo Access Information</h3>
+            <p>Due to the cost of image generation, this demo is available on request.</p>
+            <p>You can get in touch on <strong>sosanyajamiu@gmail.com</strong></p>
+            <p>Thanks for your interest!</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const previewImages = document.getElementById('previewImages');
+        const submitBtn = document.getElementById('submitBtn');
+        const modal = document.getElementById('myModal');
+        const closeModal = document.querySelector('.close-modal');
+
+        // Event listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files).slice(0, 3); // Limit to 3 files
+            previewImages.innerHTML = '';
+            
+            if (files.length > 0) {
+                submitBtn.disabled = false;
+                
+                files.forEach(file => {
+                    if (file.type.match('image.*')) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'preview-image';
+                            previewImages.appendChild(img);
+                        }
+                        
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else {
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#f0f8ff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.backgroundColor = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '';
+            
+            const files = Array.from(e.dataTransfer.files).slice(0, 3);
+            fileInput.files = e.dataTransfer.files;
+            
+            // Trigger change event
+            const event = new Event('change');
+            fileInput.dispatchEvent(event);
+        });
+
+        // Submit button click
+        submitBtn.addEventListener('click', function() {
+            modal.style.display = 'block';
+        });
+
+        // Close modal
+        closeModal.addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
